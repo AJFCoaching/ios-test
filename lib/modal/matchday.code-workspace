@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		}
+	],
+	"settings": {
+		"dart.flutterSdkPath": "C:\\src\\flutter\\tools\\bin\\sdkmanager.bat",
+		"avdmanager.sdkPath": "C:\\src\\flutter\\tools\\bin\\avdmanager.bat",
+		"avdmanager.sdkManager": "c:\\src\\flutter\\cmdline-tools\\latest\\bin\\sdkmanager.bat",
+		"avdmanager.executable": "c:\\src\\flutter\\cmdline-tools\\latest\\bin\\sdkmanager.bat",
+		"dart.flutterSdkPaths": [
+			"C:\\android\\sdk\\cmdline-tools\\latest"
+		],
+		"dart.sdkPath": "C:\\android\\sdk\\cmdline-tools\\latest",
+		"dart.sdkPaths": [
+			"C:\\android\\sdkcmdline-tools\\latest"
+		]
+	}
+}
