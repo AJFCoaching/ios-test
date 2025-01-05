@@ -58,9 +58,9 @@ class GoalButton extends StatelessWidget {
               AssistPopup.showAssistSelection(
                 context,
                 fetchPlayers, // Provide the fetchPlayers method
-                (ctx) {
+                (context) {
                   // Optional: Implement an alert or logic for goal confirmation
-                  _showGoalAlert(ctx);
+                  _showGoalAlert(context);
                 },
               );
             }

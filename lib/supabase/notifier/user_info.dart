@@ -7,7 +7,7 @@ class UserInfo extends ChangeNotifier {
   String _teamCode = "";
   String _userName = "";
   String _role = "Player";
-  String _currentSeasonDate = "2024";
+  String _currentSeasonDate = "2024/25";
   String _teamName = '';
 
   // Getters

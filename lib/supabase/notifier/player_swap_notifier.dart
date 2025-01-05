@@ -10,136 +10,95 @@ class PlayerSwapProvider with ChangeNotifier {
   Map<String, String> playerPositions =
       {}; // e.g., {'Player1': 'Midfielder', 'Player2': 'Forward'}
 
-  // getter
-  void selectedPlayerName(String playerName) {
-    selectedPlayer = playerName;
-
-    notifyListeners();
-  }
-
-  void selectedPlayerPos(String playerPos) {
-    selectedPlayerPosition = playerPos;
-
-    notifyListeners();
-  }
-
-  void selectedSubName(String subName) {
-    selectedSub = subName;
-
-    notifyListeners();
-  }
-
-  void selectedSubPos(String subPos) {
-    selectedSubPosition = subPos;
-
-    notifyListeners();
-  }
-
   final SupabaseClient supabase = Supabase.instance.client;
 
-  Future<void> swapPlayerPosition() async {
-    if (selectedPlayer.isNotEmpty && selectedSub.isNotEmpty) {
-      try {
-        // Update selected player's position with selectedSub's position
-        await supabase.from('event_attendance').update({
-          'position': selectedSubPosition,
-        }).match({
-          'match_code': matchCode,
-          'player_name': selectedPlayer,
-        });
+  // Set the match code and notify listeners
+  void setMatchCode(String selectedMatch) {
+    matchCode = selectedMatch;
+    notifyListeners();
+  }
 
-        // Update selected substitute's position with selectedPlayer's position
-        await supabase.from('event_attendance').update({
-          'position': selectedPlayerPosition,
-        }).match({
-          'match_code': matchCode,
-          'player_name': selectedSub,
-        });
+  // Set the selected player and update their position to null
+  Future<void> setSelectedPlayer(String playerName) async {
+    selectedPlayer = playerName;
+    notifyListeners();
 
-        // Print debug success message
-        debugPrint('Player positions swapped successfully.');
-      } catch (e) {
-        debugPrint('Error swapping positions in Supabase: $e');
-      }
-    } else {
-      debugPrint('Error: Player or Sub not selected.');
+    if (playerName.isNotEmpty) {
+      await updatePlayerPositionToSub(playerName);
     }
   }
 
-  // Swap positions of selectedPlayer and selectedSub
-//  Future<void> swapPositions(BuildContext context) async {
-//    if (selectedPlayer.isNotEmpty && selectedSub.isNotEmpty) {
-//      // Prevent swapping the same player
-//      if (selectedPlayer == selectedSub) {
-//        debugPrint('Error: Cannot swap the same player.');
-//        return;
-//      }
+  // Set the selected player's position
+  void setSelectedPlayerPosition(String playerPos) {
+    selectedPlayerPosition = playerPos;
+    notifyListeners();
+  }
 
-//      try {
-  // Update positions in Supabase
-//        final playerUpdateResponse =
-//            await supabase.from('event_attendance').update({
-//          'position': selectedSubPosition,
-//        }).match({
-//          'player_name': selectedPlayer,
-//          'match_code': matchCode,
-//        });
+  // Set the substitute and update their position
+  Future<void> setSelectedSub(String subName) async {
+    selectedSub = subName;
+    notifyListeners();
 
-//        final subUpdateResponse =
-//            await supabase.from('event_attendance').update({
-//          'position': selectedPlayerPosition,
-//        }).match({
-//          'player_name': selectedSub,
-//          'match_code': matchCode,
-//        });
+    if (subName.isNotEmpty) {
+      await updateSubPositionToPlayerPosition(subName, selectedPlayerPosition);
+    }
+  }
 
-//        if (playerUpdateResponse.error != null ||
-//            subUpdateResponse.error != null) {
-//          throw Exception(playerUpdateResponse.error?.message ??
-//              subUpdateResponse.error?.message);
+  // Set the substitute's position
+  void setSelectedSubPosition(String subPos) {
+    selectedSubPosition = subPos;
+    notifyListeners();
+  }
 
-//        debugPrint('Positions updated successfully in Supabase.');
+  /// Update the player's position to the substitute's position (nullifying original position)
+  Future<void> updatePlayerPositionToSub(String playerName) async {
+    try {
+      await supabase
+          .from('event_attendance')
+          .update({
+            'position': selectedSubPosition,
+          })
+          .eq('match_code', matchCode)
+          .eq('player_name', playerName);
+      debugPrint('Player position set to substitute\'s position successfully.');
+    } catch (e) {
+      debugPrint('Error updating player position: $e');
+      throw e; // Re-throw for potential UI-level handling
+    }
+  }
 
-  // Clear selected players and their positions
-//        selectedPlayer = '';
-//        selectedPlayerPosition = '';
-//        selectedSub = '';
-//        selectedSubPosition = '';
+  /// Update the substitute's position to the selected player's position
+  Future<void> updateSubPositionToPlayerPosition(
+      String subName, String selectedPlayerPosition) async {
+    try {
+      await supabase
+          .from('event_attendance')
+          .update({
+            'position': selectedPlayerPosition,
+          })
+          .eq('match_code', matchCode)
+          .eq('player_name', subName);
+      debugPrint('Substitute\'s position updated successfully.');
+    } catch (e) {
+      debugPrint('Error updating substitute\'s position: $e');
+    }
+  }
 
-  // Notify listeners to update the UI
-//        notifyListeners();
-//      } catch (e) {
-//        debugPrint('Error updating positions in Supabase: $e');
-  // Show error feedback to user
-//        ScaffoldMessenger.of(context).showSnackBar(
-//          SnackBar(
-//            content: Text('Failed to update positions: $e'),
-//            backgroundColor: Colors.red,
-//          ),
-//        );
-//      }
-//    } else {
-//      debugPrint('Error: Player or Sub not selected.');
-//    }
-//  }
-
-// Fetch substitutes linked to a specific match from Supabase
-  Future<void> fetchSubstitutes(String matchCode) async {
+  /// Fetch substitutes and mark their positions as 'Sub'
+  Future<void> fetchSubs(String matchCode) async {
     try {
       final response = await supabase
-          .from(
-              'event_attendance') // Assuming the table is named 'event_attendance'
-          .select('player_name, position') // Adjust columns as needed
+          .from('event_attendance')
+          .select('player_name, position')
           .eq('match_code', matchCode)
-          .inFilter('position',
-              ['S1', 'S2', 'S3', 'S4', 'S5']); // Substitute positions
+          .inFilter(
+              'position', ['S1', 'S2', 'S3', 'S4', 'S5']); // Sub positions
 
-      // Parse response data
       if (response is List) {
         playerPositions = {
-          for (var row in response)
-            row['player_name']: row['position'] ?? 'Unknown'
+          for (var row in response) row['player_name']: row['position'] ?? 'Sub'
         };
+        notifyListeners();
       } else {
         throw Exception('Unexpected response: $response');
       }

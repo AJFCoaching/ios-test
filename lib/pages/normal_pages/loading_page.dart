@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:matchday/main.dart';
 import 'package:matchday/pages/normal_pages/login.dart';
+import 'package:matchday/pages/normal_pages/onboarding_page.dart';
 
 class LoadingPage extends StatefulWidget {
   const LoadingPage({super.key});
@@ -28,12 +29,12 @@ class _LoadingPageState extends State<LoadingPage> {
     if (session != null) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const LogInPage()),
+        MaterialPageRoute(builder: (context) => const OnboardingPage()),
       );
     } else {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const LogInPage()),
+        MaterialPageRoute(builder: (context) => const OnboardingPage()),
       );
     }
   }

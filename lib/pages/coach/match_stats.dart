@@ -1,11 +1,15 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:matchday/custom_loader.dart';
-import 'package:matchday/main.dart';
-import 'package:matchday/modal/add_old_match.dart';
+import 'package:matchday/supabase/notifier/match_add.dart';
 import 'package:matchday/supabase/notifier/selected_match_stats.dart';
 import 'package:matchday/supabase/notifier/user_info.dart';
 import 'package:matchday/widgets/goal_scorers.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:screenshot/screenshot.dart';
 // Custom loader widget
 
 class MatchStatsPage extends StatefulWidget {
@@ -16,6 +20,44 @@ class MatchStatsPage extends StatefulWidget {
 }
 
 class _MatchStatsPageState extends State<MatchStatsPage> {
+  final ScreenshotController _screenshotController = ScreenshotController();
+
+  Future<void> _saveScreenshot() async {
+    try {
+      // Capture the screenshot
+      final Uint8List? image = await _screenshotController.capture();
+
+      if (image == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to capture screenshot')),
+        );
+        return;
+      }
+
+      // Get the app's document directory
+      final directory = await getApplicationDocumentsDirectory();
+      final path =
+          '${directory.path}/MatchStats_Screenshot_${DateTime.now().millisecondsSinceEpoch}.png';
+
+      // Save the image to a file
+      final file = File(path);
+      await file.writeAsBytes(image);
+
+      // Notify the user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Screenshot saved at $path')),
+      );
+
+      // Optionally, log the path for debugging
+      print('Screenshot saved at: $path');
+    } catch (e) {
+      print("Screenshot saving error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to save screenshot')),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -40,17 +82,69 @@ class _MatchStatsPageState extends State<MatchStatsPage> {
           icon: const Icon(Icons.arrow_back_outlined),
           onPressed: () => Navigator.pop(context),
         ),
-      ),
-      body: Column(
-        children: [
-          const SizedBox(height: 10),
-          _matchStatsData(), // Display match stats
-          const SizedBox(height: 10),
-          _addMatchEventButton(context), // Button for adding match actions
-          const SizedBox(height: 10),
-          Goalscorers(), // Display goal scorers
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.print),
+            onPressed: _saveScreenshot,
+          ),
         ],
       ),
+      body: Screenshot(
+        controller: _screenshotController,
+        child: Container(
+          color: Colors.white,
+          child: Column(
+            children: [
+              const SizedBox(height: 10),
+              _matchStatsHeader(),
+              const SizedBox(height: 10),
+              _matchStatsData(), // Display match stats
+              const SizedBox(height: 10),
+              Goalscorers(), // Display goal scorers
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _matchStatsHeader() {
+    final matchData = Provider.of<MatchAdd>(context);
+
+    return Row(
+      children: [
+        const SizedBox(width: 10),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text(
+              matchData.oppTeam,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 5),
+            Row(
+              children: [
+                Text(
+                  matchData.matchType,
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(width: 10),
+                Text(
+                  matchData.formattedDate,
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ],
+        ),
+        Spacer(),
+        Image.asset(
+          "assets/main_logo.png",
+          height: 80,
+          width: 80,
+        ),
+        const SizedBox(width: 10),
+      ],
     );
   }
 
@@ -58,9 +152,10 @@ class _MatchStatsPageState extends State<MatchStatsPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        height: 160,
+        height: 150,
         width: double.infinity,
         decoration: BoxDecoration(
+          color: Colors.amber,
           borderRadius: BorderRadius.circular(15.0),
           border: Border.all(
             color: Colors.black,
@@ -99,9 +194,9 @@ class _MatchStatsPageState extends State<MatchStatsPage> {
 
             return Column(
               children: [
+                Spacer(),
                 _teamNames(context), // Display team names
                 const SizedBox(height: 5),
-                // Displaying match stats with consistent formatting
                 _scoreRow(
                   _formatStat(matchStatsProvider.teamScore),
                   'GOALS',
@@ -109,9 +204,9 @@ class _MatchStatsPageState extends State<MatchStatsPage> {
                 ),
                 const SizedBox(height: 5),
                 _scoreRow(
-                  _formatStat(matchStatsProvider.teamXG),
+                  _formatXG(matchStatsProvider.teamXG),
                   'xG',
-                  _formatStat(matchStatsProvider.oppXG),
+                  _formatXG(matchStatsProvider.oppXG),
                 ),
                 const SizedBox(height: 5),
                 _scoreRow(
@@ -125,6 +220,7 @@ class _MatchStatsPageState extends State<MatchStatsPage> {
                   'SHOT OFF TARGET',
                   _formatStat(matchStatsProvider.oppShotOff),
                 ),
+                Spacer(),
               ],
             );
           },
@@ -174,37 +270,12 @@ class _MatchStatsPageState extends State<MatchStatsPage> {
     );
   }
 
-  Widget _addMatchEventButton(BuildContext context) {
-    return ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.black,
-      ),
-      onPressed: () {
-        _resetEventStates();
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const AddPreviousMatchDataPage(),
-          ),
-        );
-      },
-      icon: const Icon(Icons.person_add),
-      label: const Text('Add Match Actions'),
-    );
-  }
-
-  void _resetEventStates() {
-    setState(() {
-      prevEventAction = '';
-      prevEventPlayerAssistSelect = '';
-      prevEventPlayerSelect = '';
-      prevEventHalf = '1st Half';
-    });
-  }
-
   String _formatStat(dynamic stat) {
+    if (stat == null) return '0'; // Default formatting for null values
+    return double.tryParse(stat.toString())?.toStringAsFixed(0) ?? '0';
+  }
+
+  String _formatXG(dynamic stat) {
     if (stat == null) return '0.00'; // Default formatting for null values
     return double.tryParse(stat.toString())?.toStringAsFixed(2) ?? '0.00';
   }

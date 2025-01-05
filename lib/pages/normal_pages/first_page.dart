@@ -24,14 +24,15 @@ class _FirstPageState extends State<FirstPage> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.center,
+      spacing: 10,
       children: [
         const SizedBox(height: 10),
         nextMatchContainer(),
-        const SizedBox(height: 10),
+//        const SizedBox(height: 10),
         lastResults(),
-        const SizedBox(height: 10),
+//        const SizedBox(height: 10),
         seasonResults(),
-        const SizedBox(height: 20),
+//        const SizedBox(height: 20),
         resultsPieChart(),
       ],
     );
@@ -241,7 +242,7 @@ class _FirstPageState extends State<FirstPage> {
     return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Container(
-          height: 140,
+          height: 120,
           width: double.infinity,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15.0),
@@ -251,16 +252,16 @@ class _FirstPageState extends State<FirstPage> {
             ),
           ),
           child: Column(children: [
-            const SizedBox(height: 5),
+            Spacer(),
             const Text(
               "Season Results",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 5),
             teamWins(),
             teamDraws(),
             teamLost(),
-            const SizedBox(height: 5),
+            Spacer(),
           ]),
         ));
   }

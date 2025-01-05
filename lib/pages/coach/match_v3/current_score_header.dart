@@ -1,6 +1,7 @@
 // lib/widgets/current_score.dart
 
 import 'package:flutter/material.dart';
+import 'package:matchday/supabase/notifier/match_add.dart';
 import 'package:matchday/supabase/notifier/selected_match_stats.dart';
 import 'package:matchday/supabase/notifier/user_info.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +12,7 @@ class CurrentScore extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userInfo = Provider.of<UserInfo>(context);
+    final matchInfo = Provider.of<MatchAdd>(context);
 
     return Container(
       height: 120,
@@ -106,7 +108,7 @@ class CurrentScore extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  userInfo.teamName,
+                  matchInfo.oppTeam,
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,

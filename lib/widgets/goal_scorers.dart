@@ -47,53 +47,78 @@ class Goalscorers extends StatelessWidget {
             itemBuilder: (context, index) {
               final player = players[index];
               return Padding(
-                padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 10),
-                    Text(player['minute'] ?? 'N/A'),
-                    const SizedBox(width: 15),
-                    Text(player['half'] ?? 'N/A'),
-                    const SizedBox(width: 20),
-                    Text(player['action'] ?? 'Goal'),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.sports_soccer,
-                          size: 18,
-                          color: Colors.black, // Football icon for player
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          player['player'] ?? 'Unknown',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(width: 10),
-                    // Conditionally display the assist with a handshake icon
-                    if (player['assist']?.isNotEmpty ?? false) ...[
-                      const SizedBox(width: 10),
-                      const Icon(
-                        Icons.handshake,
-                        size: 18,
-                        color: Colors.black, // Handshake icon for assist
-                      ),
+                padding: const EdgeInsets.symmetric(
+                    vertical: 5, horizontal: 10), // Gap between rows
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: Colors.grey.shade400,
+                        width: 1), // Border around each row
+                    borderRadius: BorderRadius.circular(
+                        8), // Rounded corners for the border
+                    color: Colors.white, // Background color for the row
+                  ),
+                  padding: const EdgeInsets.fromLTRB(
+                      10, 8, 10, 8), // Padding inside each row
+                  child: Row(
+                    children: [
                       const SizedBox(width: 5),
                       Text(
-                        player['assist'],
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        player['minute'] ?? 'N/A',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 15),
+                      Text(player['half'] ?? 'N/A'),
+                      const SizedBox(width: 20),
+                      Text(player['action'] ?? 'Goal'),
+                      const Spacer(),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.sports_soccer,
+                                size: 18,
+                                color: Colors.black, // Football icon for player
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                player['player'] ?? 'Unknown',
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              // Conditionally display the assist with a handshake icon
+                              if (player['assist']?.isNotEmpty ?? false) ...[
+                                const Icon(
+                                  Icons.handshake,
+                                  size: 18,
+                                  color:
+                                      Colors.black, // Handshake icon for assist
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  player['assist'],
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(width: 10),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
-                    const SizedBox(width: 10),
-                  ],
+                  ),
                 ),
               );
             },

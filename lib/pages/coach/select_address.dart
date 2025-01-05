@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:matchday/supabase/notifier/save_event.dart';
-
+import 'package:matchday/supabase/notifier/match_add.dart';
 import 'package:open_street_map_search_and_pick/open_street_map_search_and_pick.dart';
 import 'package:provider/provider.dart';
 
@@ -25,8 +24,7 @@ class _SelectAddressState extends State<SelectAddress> {
         buttonText: 'Set Current Location',
         onPicked: (pickedData) {
           // Retrieve the EventNotifier from the context
-          final eventNotifier =
-              Provider.of<EventNotifier>(context, listen: false);
+          final eventNotifier = Provider.of<MatchAdd>(context, listen: false);
 
           // Set the selected address details in the notifier
           eventNotifier.address = pickedData.addressName; // Update address

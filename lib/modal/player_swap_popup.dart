@@ -60,9 +60,9 @@ class PlayerSwapPopup extends StatelessWidget {
                               playerPosition;
                           // Select as player or sub
                           if (playerSwapProvider.selectedPlayer.isEmpty) {
-                            playerSwapProvider.selectedPlayerName(playerName);
+                            playerSwapProvider.setSelectedPlayer(playerName);
                           } else {
-                            playerSwapProvider.selectedSubName(playerName);
+                            playerSwapProvider.setSelectedSub(playerName);
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -104,30 +104,47 @@ class PlayerSwapPopup extends StatelessWidget {
                 return;
               }
 
-              // Swap their positions
+              try {
+                // Save the original player's position for swapping
+                final originalPosition =
+                    playerSwapProvider.selectedPlayerPosition;
 
-              playerSwapProvider.selectedPlayer = '';
-              playerSwapProvider.selectedPlayerPosition = '';
-              playerSwapProvider.selectedSub = '';
-              playerSwapProvider.selectedSubPosition = '';
+                // Step 1: Update selected player's position to 'Sub'
+                playerSwapProvider.updatePlayerPositionToSub(
+                  playerSwapProvider.selectedPlayer,
+                );
 
-              print(playerSwapProvider.selectedPlayer);
-              print(playerSwapProvider.selectedPlayerPosition);
-              print(playerSwapProvider.selectedSub);
-              print(playerSwapProvider.selectedSubPosition);
+                // Step 2: Update selected substitute's position to the original player's position
+//                await playerSwapProvider.updateSubPositionToPlayerPosition(
+//                  playerSwapProvider.selectedSub,
+//                  originalPosition,
+//                ) ;
 
-              await playerSwapProvider.swapPlayerPosition();
+                // Reset selections after swap
+//                playerSwapProvider.selectedPlayer = '';
+//                playerSwapProvider.selectedPlayerPosition = '';
+//                playerSwapProvider.selectedSub = '';
+//                playerSwapProvider.selectedSubPosition = '';
 
-              // Close the popup after swapping
-              Navigator.pop(context);
+                // Optionally, show a success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Players  swapped successfully!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
 
-              // Optionally, show a success message
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Players swapped successfully!'),
-                  backgroundColor: Colors.green,
-                ),
-              );
+                // Close the popup (if applicable)
+                Navigator.pop(context);
+              } catch (e) {
+                debugPrint('Error during position swap: $e');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to swap players: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,

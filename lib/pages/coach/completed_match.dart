@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:matchday/main.dart';
+import 'package:matchday/supabase/notifier/match_add.dart';
 
 import 'package:matchday/supabase/notifier/selected_match_stats.dart';
 import 'package:matchday/supabase/notifier/user_info.dart';
@@ -125,7 +126,7 @@ class _CompletedMatchModalState extends State<CompletedMatchModal> {
   Widget matchDateWidget() {
     final matchData = Provider.of<MatchAdd>(context);
     return Text(
-      matchData.matchDate,
+      matchData.formattedDate,
       style: const TextStyle(
           fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
     );

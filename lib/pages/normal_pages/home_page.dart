@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:matchday/pages/coach/player_list.dart';
 import 'package:matchday/pages/coach/register_team.dart';
+import 'package:matchday/pages/coach/scout.dart';
 import 'package:matchday/pages/normal_pages/first_page.dart';
 import 'package:matchday/main.dart';
 import 'package:matchday/pages/normal_pages/fixture_page.dart';
-import 'package:matchday/pages/normal_pages/event_data.dart';
 import 'package:matchday/supabase/notifier/user_info.dart';
 import 'package:provider/provider.dart';
 
@@ -23,9 +23,8 @@ class _HomePageState extends State<HomePage> {
     const FirstPage(),
     const FixturePage(),
     const TeamPlayerListPage(),
-//     const ScoutPage(),
+    const ScoutPage(),
     const RegisterTeamPage(),
-    const EventDataPage(),
   ];
 
   void _onItemTapped(int index) {

@@ -3,10 +3,10 @@ import 'package:matchday/main.dart';
 import 'package:matchday/modal/select_half.dart';
 import 'package:matchday/pages/coach/match_v3/bottom_buttons.dart';
 import 'package:matchday/pages/coach/match_v3/current_score_header.dart';
+import 'package:matchday/supabase/notifier/match_add.dart';
 import 'package:matchday/supabase/notifier/player_positions_notifier.dart';
+import 'package:matchday/supabase/notifier/player_swap_notifier.dart';
 import 'package:matchday/supabase/notifier/selected_match_stats.dart';
-import 'package:matchday/supabase/notifier/user_info.dart';
-import 'package:matchday/supabase/save_match_action.dart';
 import 'package:provider/provider.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:matchday/modal/match_event_popup.dart';
@@ -42,6 +42,11 @@ class _BasicMatchPageStateV3 extends State<BasicMatchPageV3> {
   String selectedPlayer = '';
   final StopWatchTimer _stopWatchTimer = StopWatchTimer();
 
+  Future<void> _refreshPlayerPositions() async {
+    await Provider.of<PlayerPositionsNotifier>(context, listen: false)
+        .fetchPlayers();
+  }
+
   // Function to get player initials from full name
   String getPlayerInitials(String name) {
     List<String> nameParts = name.split(' ');
@@ -71,6 +76,8 @@ class _BasicMatchPageStateV3 extends State<BasicMatchPageV3> {
             padding: const EdgeInsets.symmetric(horizontal: 25.0),
             child: GestureDetector(
               onTap: () {
+                final playerSwapProvider =
+                    Provider.of<PlayerSwapProvider>(context, listen: false);
                 final matchEventProvider =
                     Provider.of<SelectedMatchStats>(context, listen: false);
                 setState(() {
@@ -84,6 +91,10 @@ class _BasicMatchPageStateV3 extends State<BasicMatchPageV3> {
                 // Call the popup function with necessary parameters
                 showEventPopup(context, matchEventTime, selectedPlayer,
                     selectedPlayerPosition, matchCode);
+
+                playerSwapProvider.updatePlayerPositionToSub(
+                  playerSwapProvider.selectedPlayer,
+                );
               },
               child: Column(
                 children: [
@@ -121,16 +132,6 @@ class _BasicMatchPageStateV3 extends State<BasicMatchPageV3> {
 
   @override
   Widget build(BuildContext context) {
-    final playerPositions = Provider.of<PlayerPositionsNotifier>(context);
-
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    final double topHeight =
-        150; // Approximate height of topRow() and currentScore()
-    final double bottomHeight = 200; // Approximate height of player rows
-    final double imageHeight = screenHeight - topHeight - bottomHeight;
-
     return Scaffold(
       body: Column(children: [
         // Top of the screen: top row and current score
@@ -138,110 +139,49 @@ class _BasicMatchPageStateV3 extends State<BasicMatchPageV3> {
         CurrentScore(),
         const SizedBox(height: 5),
 
-        // Main content: Stack with soccer pitch background image and player rows
-        Expanded(
-          child: Stack(
-            children: [
-              Positioned(
-                bottom: 135,
-                left: 20,
-                right: 20,
-                child: Image.asset(
-                  'assets/Soccer_Field.png',
-                  width: screenWidth,
-                  height: imageHeight,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 10),
-
-                  // Forward Row
-                  playerRow(playerPositions.forwards, Colors.red),
-                  const Spacer(),
-
-                  // Attacking Midfield Row
-                  playerRow(playerPositions.attackingMidfielders, Colors.red),
-                  const Spacer(),
-
-                  // Midfield Row
-                  playerRow(playerPositions.midfielders, Colors.red),
-                  const Spacer(),
-
-                  // Defensive Midfield Row
-                  playerRow(playerPositions.defensiveMidfielders, Colors.red),
-                  const Spacer(),
-
-                  // Defense Row
-                  playerRow(playerPositions.defenders, Colors.red),
-                  const Spacer(),
-
-                  // Goalkeeper Row
-                  playerRow(playerPositions.goalkeepers, Colors.blue),
-
-                  const SizedBox(height: 15),
-
-                  // Substitutes Row with "Subs" label
-                  Row(
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.only(left: 8.0), // Optional spacing
-                        child: Text(
-                          'Subs',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black, // Change color if desired
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: playerRow(
-                            playerPositions.substitutes, Colors.amber),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // oposition row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Spacer(),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.white,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            selectedPlayer = 'Opposition';
-                            matchEventTime = _stopWatchTimer.minuteTime.value
-                                .toStringAsPrecision(1);
-                          });
-
-                          // Call the popup function with necessary parameters
-                          showEventPopup(
-                              context,
-                              matchEventTime,
-                              selectedPlayer,
-                              selectedPlayerPosition,
-                              matchCode);
-                        },
-                        child: const Text(
-                            'Oposition'), // Proper label instead of child: null
-                      ),
-                      const Spacer(),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                ],
-              ),
-            ],
+        // Refreshable Stack with soccer pitch background image and player rows
+        SizedBox(
+          height: 530, // Fixed height for pitchArea
+          child: RefreshIndicator(
+            onRefresh: _refreshPlayerPositions,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: pitchArea(context),
+            ),
           ),
         ),
+
+        const SizedBox(height: 18),
+
+        // Opposition row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Spacer(),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                setState(() {
+                  selectedPlayer = 'Opposition';
+                  matchEventTime =
+                      _stopWatchTimer.minuteTime.value.toStringAsPrecision(1);
+                });
+
+                // Call the popup function with necessary parameters
+                showEventPopup(context, matchEventTime, selectedPlayer,
+                    selectedPlayerPosition, matchCode);
+              },
+              child: const Text(
+                  'Opposition'), // Proper label instead of child: null
+            ),
+            const Spacer(),
+          ],
+        ),
+        const SizedBox(height: 18),
+        const Spacer(),
 
         BottomButtons(
           stopWatchTimer: _stopWatchTimer,
@@ -263,7 +203,7 @@ class _BasicMatchPageStateV3 extends State<BasicMatchPageV3> {
     );
   }
 
-// top row
+  // top row
   Widget topRow(BuildContext context) {
     final matchData = Provider.of<MatchAdd>(context);
     return Container(
@@ -271,7 +211,7 @@ class _BasicMatchPageStateV3 extends State<BasicMatchPageV3> {
         width: double.infinity,
         decoration: const BoxDecoration(color: Colors.black),
         child: Column(children: [
-          Spacer(),
+          const Spacer(),
           Row(
             children: [
               const Spacer(),
@@ -310,50 +250,77 @@ class _BasicMatchPageStateV3 extends State<BasicMatchPageV3> {
         ]));
   }
 
-  void saveGoalWithAssist(BuildContext context, String assistPlayer) async {
-    final saveActionProvider =
-        Provider.of<SaveActionToSupabase>(context, listen: false);
-    final matchEventProvider =
-        Provider.of<SelectedMatchStats>(context, listen: false);
-    final userInfoProvider = Provider.of<UserInfo>(context, listen: false);
+  Widget pitchArea(BuildContext context) {
+    final playerPositions = Provider.of<PlayerPositionsNotifier>(context);
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
 
-    try {
-      // Save details into the provider
-      saveActionProvider.matchCode = matchEventProvider.matchCode;
-      saveActionProvider.teamCode = userInfoProvider.teamCode;
-      saveActionProvider.matchEventTime = matchEventTime;
-      saveActionProvider.matchHalf = matchHalf;
-      saveActionProvider.selectedPlayer = selectedPlayer;
-      saveActionProvider.playerAssist = assistPlayer;
-      saveActionProvider.eventAction = 'Goal with Assist';
+    final double topHeight =
+        150; // Approximate height of topRow() and currentScore()
+    final double bottomHeight = 200; // Approximate height of player rows
+    final double imageHeight = screenHeight - topHeight - bottomHeight;
 
-      // Update the score and stats
-      if (selectedPlayer == 'Opposition') {
-        matchEventProvider.incrementOppScore();
-        matchEventProvider.incrementOppGoalXG();
-      } else if (selectedPlayer.isNotEmpty) {
-        matchEventProvider.incrementTeamScore();
-        matchEventProvider.incrementTeamGoalXG();
-      }
+    return
 
-      // Save action to Supabase
-      await saveActionProvider.saveAction();
-
-      // Show success feedback
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Goal and assist saved successfully!'),
-          backgroundColor: Colors.green,
+        // Main content: Stack with soccer pitch background image and player rows
+        Container(
+      height: 500,
+      margin: const EdgeInsets.symmetric(
+          horizontal: 10, vertical: 10), // Margin around the container
+      decoration: BoxDecoration(
+        color: Colors.green, // Background color
+        borderRadius: BorderRadius.circular(10), // Rounded corners
+        border: Border.all(
+          color: Colors.grey.shade400, // Border color
+          width: 2, // Border width
         ),
-      );
-    } catch (error) {
-      // Show error feedback
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error saving action: $error'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8, // Shadow blur
+            offset: const Offset(4, 4), // Shadow offset
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Image.asset(
+            'assets/Soccer_Field.png',
+            width: screenWidth,
+            height: imageHeight,
+            fit: BoxFit.fill,
+          ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const SizedBox(height: 10),
+
+              // Forward Row
+              playerRow(playerPositions.forwards, Colors.red),
+              const Spacer(),
+
+              // Attacking Midfield Row
+              playerRow(playerPositions.attackingMidfielders, Colors.red),
+              const Spacer(),
+
+              // Midfield Row
+              playerRow(playerPositions.midfielders, Colors.red),
+              const Spacer(),
+
+              // Defensive Midfield Row
+              playerRow(playerPositions.defensiveMidfielders, Colors.red),
+              const Spacer(),
+
+              // Defense Row
+              playerRow(playerPositions.defenders, Colors.red),
+              const Spacer(),
+
+              // Goalkeeper Row
+              playerRow(playerPositions.goalkeepers, Colors.blue),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

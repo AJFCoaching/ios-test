@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:matchday/main.dart';
+import 'package:matchday/supabase/notifier/match_add.dart';
 import 'package:provider/provider.dart';
 
 class MatchScorers with ChangeNotifier {

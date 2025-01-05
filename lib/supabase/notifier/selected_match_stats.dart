@@ -21,6 +21,7 @@ class SelectedMatchStats extends ChangeNotifier {
   String matchResult = ''; // Result of the match
   bool completedEvent = false;
   bool eventTraining = false;
+  Map<String, dynamic>? matchStats;
 
   // Getters
   String get getOppName => oppName;
@@ -223,6 +224,7 @@ class SelectedMatchStats extends ChangeNotifier {
         this.matchCode = matchCode; // Save the match code
         hasError = false; // Reset error state
       }
+      matchStats = response as Map<String, dynamic>?; // Store the fetched data
     } catch (error) {
       hasError = true; // Set error state on exception
       // Log or handle the error appropriately

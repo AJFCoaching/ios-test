@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:matchday/buttons/match_stats_button.dart';
+import 'package:matchday/buttons/player_rating_button.dart';
+import 'package:matchday/buttons/view_pdf_button.dart';
 import 'package:matchday/main.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:matchday/pages/coach/attendance.dart';
 import 'package:matchday/pages/coach/match_v3/basic_match_v3.dart';
 import 'package:matchday/pages/coach/completed_match.dart';
-import 'package:matchday/pages/coach/match_stats.dart';
 import 'package:matchday/pages/coach/player_positions.dart';
 import 'package:matchday/pages/normal_pages/home_page.dart';
+import 'package:matchday/supabase/notifier/match_add.dart';
+import 'package:matchday/supabase/notifier/player_swap_notifier.dart';
 import 'package:matchday/supabase/notifier/selected_match_stats.dart';
 import 'package:matchday/supabase/notifier/user_info.dart';
 import 'package:provider/provider.dart';
@@ -95,7 +99,9 @@ class _EventDataPageState extends State<EventDataPage> {
           const Spacer(),
         ]),
         const SizedBox(height: 15),
-        matchStatsButton(),
+        MatchStatsButton(),
+        const SizedBox(height: 15),
+        PlayerRatingButton(),
       ],
     );
   }
@@ -186,7 +192,7 @@ class _EventDataPageState extends State<EventDataPage> {
         style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
       ),
       const SizedBox(width: 20),
-      Text(matchData.matchDate,
+      Text(matchData.formattedDate,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       const Spacer(),
       const Text(
@@ -195,7 +201,7 @@ class _EventDataPageState extends State<EventDataPage> {
       ),
       const SizedBox(width: 20),
       Text(
-        matchEventTime,
+        matchData.matchEventTime,
         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
       const Spacer(),
@@ -246,15 +252,15 @@ class _EventDataPageState extends State<EventDataPage> {
           ),
         ),
         child: Row(
+          spacing: 10,
           children: [
-            const SizedBox(width: 10),
+            SizedBox(width: 2),
             const Text(
               'ADDRESS - ',
               style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
             ),
-            const Spacer(),
             SizedBox(
-              width: 275,
+              width: 325,
               child: Text(
                 matchData.address,
                 maxLines: 3,
@@ -263,7 +269,6 @@ class _EventDataPageState extends State<EventDataPage> {
                     const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ),
-            const Spacer(),
           ],
         ),
       ),
@@ -324,55 +329,10 @@ class _EventDataPageState extends State<EventDataPage> {
     );
   }
 
-  Widget matchStatsButton() {
-    return ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.purple,
-        foregroundColor: Colors.white,
-      ),
-      onPressed: () async {
-        // Access the providers before performing actions
-        final matchStatsProvider =
-            Provider.of<SelectedMatchStats>(context, listen: false);
-        final matchDataProvider = Provider.of<MatchAdd>(context, listen: false);
-
-        // Get the matchCode from the MatchAdd provider
-        final selectedMatchCode = matchDataProvider.matchCode;
-
-        // Show loading indicator or disable the button if needed
-        matchStatsProvider.isLoading = true;
-        matchStatsProvider.notifyListeners();
-
-        // Fetch match stats using the selected match code
-        await matchStatsProvider.fetchSelectedMatchStats(selectedMatchCode);
-
-        // Check if the widget is still mounted before using the context
-        if (!mounted) return;
-
-        // After successfully fetching the stats, navigate to MatchStatsPage
-        if (!matchStatsProvider.hasError) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const MatchStatsPage()),
-          );
-        } else {
-          // Handle error case
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error fetching match stats')),
-          );
-        }
-
-        // Debug: print the match code to confirm it
-        // ignore: avoid_print
-        print("Match code passed: $selectedMatchCode");
-      },
-      icon: const Icon(Icons.data_thresholding_outlined),
-      label: const Text('Match Stats'),
-    );
-  }
-
   Widget bottomNavbar(BuildContext context) {
     final matchDataProvider = Provider.of<MatchAdd>(context, listen: false);
+    final playerSwapProvider =
+        Provider.of<PlayerSwapProvider>(context, listen: false);
 
     // Get the matchCode from the MatchAdd provider
     final selectedMatchCode = matchDataProvider.matchCode;
@@ -391,6 +351,7 @@ class _EventDataPageState extends State<EventDataPage> {
               child: InkWell(
                 onTap: () {
                   matchStats.matchCode = selectedMatchCode;
+                  playerSwapProvider.matchCode = matchStats.matchCode;
                   matchStats.resetMatchStats(); // Reset stats using MatchStats
                   Navigator.push(
                     context,

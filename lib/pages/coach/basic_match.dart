@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:matchday/main.dart';
-import 'package:matchday/modal/match_event.dart';
-import 'package:matchday/modal/match_event_opp.dart';
+import 'package:matchday/modal/match_event_popup.dart';
 import 'package:matchday/modal/select_half.dart';
+import 'package:matchday/supabase/notifier/match_add.dart';
+import 'package:matchday/supabase/notifier/selected_match_stats.dart';
+import 'package:matchday/supabase/notifier/user_info.dart';
+import 'package:provider/provider.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 
 class BasicMatchPage extends StatefulWidget {
@@ -14,8 +17,10 @@ class BasicMatchPage extends StatefulWidget {
 
 class _BasicMatchPageState extends State<BasicMatchPage> {
   Future<void> addActionToSupabase() async {
+    final matchStatsProvider =
+        Provider.of<SelectedMatchStats>(context, listen: false);
     final matchAction = {
-      'match_code': matchCode,
+      'match_code': matchStatsProvider.matchCode,
       'minute': matchEventTime,
       'action': eventAction,
       'half': matchHalf,
@@ -24,10 +29,12 @@ class _BasicMatchPageState extends State<BasicMatchPage> {
   }
 
   Stream<List<Map<String, dynamic>>> getMatchActions() {
+    final matchStatsProvider =
+        Provider.of<SelectedMatchStats>(context, listen: false);
     return supabase
         .from('match_actions')
         .stream(primaryKey: ['id'])
-        .eq('match_code', matchCode)
+        .eq('match_code', matchStatsProvider.matchCode)
         .order('id', ascending: false);
   }
 
@@ -38,6 +45,12 @@ class _BasicMatchPageState extends State<BasicMatchPage> {
   final _isSeconds = true;
 
   bool click = true;
+
+  int teamcounter = 0;
+  int oppcounter = 0;
+
+  String teamScore = '';
+  String oppScore = '';
 
   void _selecthalf(BuildContext context) {
     showModalBottomSheet(
@@ -52,7 +65,11 @@ class _BasicMatchPageState extends State<BasicMatchPage> {
     showModalBottomSheet(
       context: context,
       builder: (_) {
-        return SelectEventModal();
+        return EventPopup(
+          matchEventTime: '',
+          selectedPlayer: '',
+          selectedPlayerPosition: '',
+        );
       },
     );
   }
@@ -61,7 +78,11 @@ class _BasicMatchPageState extends State<BasicMatchPage> {
     showModalBottomSheet(
       context: context,
       builder: (_) {
-        return SelectOppEventModal();
+        return EventPopup(
+          matchEventTime: '',
+          selectedPlayer: '',
+          selectedPlayerPosition: '',
+        );
       },
     );
   }
@@ -84,6 +105,7 @@ class _BasicMatchPageState extends State<BasicMatchPage> {
 
   // top row
   Widget topRow() {
+    final matchInfoProvider = Provider.of<MatchAdd>(context, listen: false);
     return Container(
       height: 80,
       width: double.infinity,
@@ -98,7 +120,7 @@ class _BasicMatchPageState extends State<BasicMatchPage> {
           Spacer(),
           StreamBuilder<int>(
             stream: _stopWatchTimer.rawTime,
-            initialData: matcHalfLength,
+            initialData: matchInfoProvider.matchHalfLength,
             builder: (context, snapshot) {
               final value = snapshot.data!;
               final displayTime = StopWatchTimer.getDisplayTime(
@@ -117,7 +139,7 @@ class _BasicMatchPageState extends State<BasicMatchPage> {
           ),
           Spacer(),
           Text(
-            matchType,
+            matchInfoProvider.matchType,
             style: TextStyle(color: Colors.white),
           ),
           Spacer(),
@@ -128,6 +150,8 @@ class _BasicMatchPageState extends State<BasicMatchPage> {
 
   // current score
   Widget currentScore() {
+    final userInfoProvider = Provider.of<UserInfo>(context, listen: false);
+    final matchInfoProvider = Provider.of<MatchAdd>(context, listen: false);
     return Container(
       height: 90,
       width: double.infinity,
@@ -139,7 +163,7 @@ class _BasicMatchPageState extends State<BasicMatchPage> {
             children: [
               SizedBox(height: 5),
               Text(
-                teamName,
+                userInfoProvider.teamName,
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 5),
@@ -172,7 +196,7 @@ class _BasicMatchPageState extends State<BasicMatchPage> {
             children: [
               SizedBox(height: 5),
               Text(
-                oppTeam,
+                matchInfoProvider.oppTeam,
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 5),
@@ -367,55 +391,55 @@ class _BasicMatchPageState extends State<BasicMatchPage> {
                       SizedBox(width: 10),
                       if (data[index]['action'] == 'Start' &&
                           matchHalf == '1st Half')
-                        Container(
+                        SizedBox(
                             height: 40,
                             width: 40,
                             child: Image.asset("assets/kick-off.png")),
                       if (data[index]['action'] == 'Start' &&
                           matchHalf == '2nd Half')
-                        Container(
+                        SizedBox(
                             height: 40,
                             width: 40,
                             child: Image.asset("assets/kick-off.png")),
                       if (data[index]['action'] == 'End' &&
                           matchHalf == '1st Half')
-                        Container(
+                        SizedBox(
                             height: 40,
                             width: 40,
                             child: Image.asset("assets/half-time.png")),
                       if (data[index]['action'] == 'End' &&
                           matchHalf == '2nd Half')
-                        Container(
+                        SizedBox(
                             height: 40,
                             width: 40,
                             child: Image.asset("assets/full-time.png")),
                       if (data[index]['action'] == 'Goal')
-                        Container(
+                        SizedBox(
                             height: 40,
                             width: 40,
                             child: Image.asset("assets/goal.png")),
                       if (data[index]['action'] == 'Shot on Target')
-                        Container(
+                        SizedBox(
                             height: 40,
                             width: 40,
                             child: Image.asset("assets/target.png")),
                       if (data[index]['action'] == 'Shot off Target')
-                        Container(
+                        SizedBox(
                             height: 40,
                             width: 40,
                             child: Image.asset("assets/off-target.png")),
                       if (data[index]['action'] == 'Penalty Saved')
-                        Container(
+                        SizedBox(
                             height: 40,
                             width: 40,
                             child: Image.asset("assets/goalkeeper.png")),
                       if (data[index]['action'] == 'Penalty Missed')
-                        Container(
+                        SizedBox(
                             height: 40,
                             width: 40,
                             child: Image.asset("assets/off-target.png")),
                       if (data[index]['action'] == 'Penalty Scored')
-                        Container(
+                        SizedBox(
                             height: 40,
                             width: 40,
                             child: Image.asset("assets/goal.png")),
@@ -430,7 +454,7 @@ class _BasicMatchPageState extends State<BasicMatchPage> {
                       if (data[index]['assist'] == '')
                         SizedBox.shrink()
                       else
-                        Container(
+                        SizedBox(
                             height: 40,
                             width: 40,
                             child: Image.asset("assets/friendship.png")),

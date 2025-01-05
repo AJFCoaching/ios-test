@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:matchday/pages/normal_pages/event_data.dart';
-import 'package:matchday/modal/add_fixture.dart';
+import 'package:matchday/modal/fixture_add/add_fixture_main.dart';
+import 'package:matchday/supabase/notifier/match_add.dart';
 import 'package:matchday/supabase/notifier/player_positions_notifier.dart';
 import 'package:matchday/supabase/notifier/user_info.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:matchday/main.dart';
 
 class FixturePage extends StatefulWidget {
   const FixturePage({super.key});
@@ -22,7 +22,7 @@ void _addFixture(BuildContext context) {
     context: context,
     isScrollControlled: true,
     builder: (_) {
-      return const AddEventModel();
+      return AddEventModel();
     },
   );
 }
@@ -57,10 +57,10 @@ class _FixturePageState extends State<FixturePage> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      spacing: 10,
       children: [
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         addFixtureButton(),
-        const SizedBox(height: 10),
         listOfFixtures(),
       ],
     );
@@ -73,7 +73,7 @@ class _FixturePageState extends State<FixturePage> {
       return const Center(child: Text('No fixtures available')); // Empty state
     } else {
       return SizedBox(
-        height: MediaQuery.of(context).size.height * 0.75,
+        height: MediaQuery.of(context).size.height * 0.72,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
           child: RefreshIndicator(
@@ -90,10 +90,11 @@ class _FixturePageState extends State<FixturePage> {
                   child: ListTile(
                     leading: Column(
                         crossAxisAlignment: CrossAxisAlignment
-                            .start, // Align items to the start
+                            .center, // Align items to the start
                         children: [
+                          const Spacer(),
                           _buildLeadingIcon(event),
-                          const SizedBox(height: 5),
+                          const Spacer(),
 
                           // This will display the event date
                           Text(
@@ -102,19 +103,22 @@ class _FixturePageState extends State<FixturePage> {
                             style: const TextStyle(
                                 fontSize: 10, fontWeight: FontWeight.bold),
                           ),
+                          const Spacer(),
                         ]),
+
+                    // match details
                     title:
                         // This will display the event type (name) above the opponent
                         Text(
                       event['Type'], // Event name (type)
                       style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 20),
+                          fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     subtitle:
                         // This will display the opponent name
                         Text(
                       event['Opp'], // Opponent name
-                      style: const TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 15),
                     ),
                     trailing: Wrap(
                       spacing: 2,

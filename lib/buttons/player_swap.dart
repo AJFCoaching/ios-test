@@ -27,7 +27,7 @@ class SwapPlayerButton extends StatelessWidget {
         onPressed: () {
           swapPlayerProvider.selectedPlayer = selectedPlayer;
           swapPlayerProvider.selectedPlayerPosition = selectedPlayerPosition;
-          swapPlayerProvider.fetchSubstitutes(matchCode);
+          swapPlayerProvider.fetchSubs(matchCode);
           showDialog(
             context: context,
             builder: (context) => ChangeNotifierProvider.value(
